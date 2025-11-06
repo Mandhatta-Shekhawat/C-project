@@ -1,37 +1,38 @@
-#include <iostream>
-#include <fstream>
-#include <string>
+#include<iostream>
+#include<fstream>
+#include<string>
 using namespace std;
 
-// ======================= Base class =======================
-class Person {
-protected:
+// Base class which is person
+class Person{
+    protected:
     int age;
     string name;
-public:
+    public:
+    // Default constructor
     Person() {
         name = "";
         age = 0;
     }
-
+    // Paramatrized constructor
     Person(string n, int a) {
         name = n;
         age = a;
     }
-
     virtual void display() {
         cout << "Name: " << name << endl;
         cout << "Age: " << age << endl;
     }
 };
 
-// ======================= Derived class =======================
-class Student : public Person {
-private:
+// Derived Class i.e. Student
+class Student : public Person{
+    private:
     int rollNo;
     float marks;
     static int count;
-public:
+    public:
+    // Default constructor
     Student() {
         name = "";
         age = 0;
@@ -39,7 +40,7 @@ public:
         marks = 0.0;
         count++;
     }
-
+    // Paramatrized Constructor
     Student(string n, int a, int r, float m) {
         name = n;
         age = a;
@@ -47,7 +48,7 @@ public:
         marks = m;
         count++;
     }
-
+    // Copy Constructor
     Student(const Student &other) {
         name = other.name;
         age = other.age;
@@ -55,13 +56,14 @@ public:
         marks = other.marks;
         count++;
     }
-
-    ~Student() {
+    // Destructor
+    ~Student(){
         count--;
     }
 
+    // Member Functions
     void setDetails(string n, int a, int r, float m) {
-        this->name = n;
+        this->name = n; // using this pointer
         this->age = a;
         this->rollNo = r;
         this->marks = m;
@@ -74,21 +76,32 @@ public:
         cout << "Marks: " << marks << endl;
     }
 
+    // Friend function to access private data
     friend void updateMarks(Student &s, float newMarks);
 
     bool searchByRoll(int r) {
-        return rollNo == r;
+        if (rollNo == r)
+            return true;
+        else
+            return false;
     }
 
     bool searchByName(string n) {
-        return name == n;
+        if (name == n)
+            return true;
+        else
+            return false;
     }
 
+    // saves the data to file
     void saveToFile(ofstream &out) {
-        out << rollNo << "," << name << "," << age << "," << marks << endl;
+        out << rollNo << ",";   // write roll number
+        out << name << ",";     // write name
+        out << age << ",";      // write age
+        out << marks << endl;   // write marks and move to next line
     }
 
-    static int getCount() {
+    static int getCount(){
         return count;
     }
 };
@@ -96,17 +109,16 @@ public:
 // Initialize static member
 int Student::count = 0;
 
-// Friend function
+// Friend function definition
 void updateMarks(Student &s, float newMarks) {
     s.marks = newMarks;
 }
 
-// ======================= Main Program =======================
-int main() {
-    const int MAX_STUDENTS = 100;  // fixed array size
-    Student students[MAX_STUDENTS];
-    int studentCount = 0;
-
+// main programme
+int main(){
+    const int MAX_STUDENTS = 100;  // Maximum students allowed
+    Student students[MAX_STUDENTS]; // Fixed-size array instead of vector
+    int studentCount = 0;           // Number of students currently in array
     int choice;
 
     do {
@@ -131,9 +143,9 @@ int main() {
             int age, roll;
             float marks;
 
-            cout << "Enter name: ";
-            cin.ignore();
-            getline(cin, name);
+            cout<<"Enter name: ";
+            cin.ignore(); //clear the buffer
+            getline(cin,name);
 
             cout << "Enter Age: ";
             cin >> age;
@@ -147,7 +159,6 @@ int main() {
 
             cout << "Student added successfully!\n";
         }
-
         else if (choice == 2) {
             cout << "\n--- Student List ---\n";
             for (int i = 0; i < studentCount; i++) {
@@ -155,12 +166,10 @@ int main() {
                 cout << "-------------------\n";
             }
         }
-
         else if (choice == 3) {
             int searchType;
             cout << "Search by 1. Roll No  2. Name: ";
             cin >> searchType;
-
             bool found = false;
 
             if (searchType == 1) {
@@ -194,7 +203,6 @@ int main() {
                 cout << "Student not found.\n";
             }
         }
-
         else if (choice == 4) {
             int roll;
             float newMarks;
@@ -214,7 +222,6 @@ int main() {
             }
             if (!updated) cout << "Roll No not found.\n";
         }
-
         else if (choice == 5) {
             try {
                 ofstream fout("students.txt");
@@ -223,18 +230,16 @@ int main() {
                 for (int i = 0; i < studentCount; i++) {
                     students[i].saveToFile(fout);
                 }
-
                 fout.close();
                 cout << "Data saved to file successfully!\n";
-            } catch (exception &e) {
+            }
+            catch (exception &e) {
                 cout << "Error: " << e.what() << endl;
             }
         }
-
         else if (choice == 6) {
             cout << "Total students currently in memory: " << Student::getCount() << endl;
         }
-
     } while (choice != 0);
 
     cout << "Exiting program...\n";
