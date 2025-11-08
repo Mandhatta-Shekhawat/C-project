@@ -1,7 +1,6 @@
 #include<iostream>
 #include<fstream>
 #include<string>
-#include<vector>
 using namespace std;
 // Base class which is person
 class Person{
@@ -27,7 +26,7 @@ Person(string n, int a) {
 };
 // Derived Class i.e. Student
 class Student : public Person{
-    private:
+    protected:
     int rollNo;
     float marks;
    static int count;
@@ -74,7 +73,7 @@ void display()override {
     cout << "Age: " << age << endl;
     cout << "Marks: " << marks << endl;
 }
- // Friend function to access private data
+ // Friend function to access private data of the base class
     friend void updateMarks(Student &s, float newMarks);
 bool searchByRoll(int r) {
     if (rollNo == r)
@@ -96,6 +95,21 @@ void saveToFile(ofstream &out) {
     out << age << ",";      // write age
     out << marks << endl;   // write marks and move to next line
 }
+string getName() const {
+    return name;
+}
+
+int getAge() const {
+    return age;
+}
+
+int getRollNo() const {
+    return rollNo;
+}
+
+float getMarks() const {
+    return marks;
+}
  static int getCount(){
     return count;
  }
@@ -107,10 +121,47 @@ int Student::count = 0;
 void updateMarks(Student &s, float newMarks) {
     s.marks = newMarks;
 }
+// Derived class for Weak Students (inherits from Student)(jMultilevel Inheritance)
+class WeakStudent : public Student {
+private:
+    static const int PASS_MARKS = 40; // Passing marks threshold
+
+public:
+    // Default constructor
+    WeakStudent() {
+    name = "";
+    age = 0;
+    rollNo = 0;
+    marks = 0.0;
+}
+
+    // Parametrized constructor
+    WeakStudent(string n, int a, int r, float m) {// it receives these from the student class
+    name = n;
+    age = a;
+    rollNo = r;
+    marks = m;
+}
+
+    // Function to check if student is weak
+    bool isWeak() const {
+        return getMarks() < PASS_MARKS;
+    }
+
+    // Function to save weak student data
+    void saveWeakStudent(ofstream &out) {
+        if (isWeak()) {
+            saveToFile(out);
+        }
+    }
+};
+
 // main programme
 
 int main(){
-    vector<Student> students;
+    const int MAX_STUDENTS = 100;  // Maximum students allowed
+	Student students[MAX_STUDENTS]; // Fixed-size array instead of vector as array can have unnumbered inputs
+	int studentCount = 0;           // Number of students currently in array
     int choice;
     do {
         cout << "\n===== Student Management System =====\n";
@@ -125,6 +176,9 @@ int main(){
         cin >> choice;
 
         if (choice == 1) {
+            if (studentCount >= MAX_STUDENTS) {
+                cout << "Cannot add more students (limit reached).\n";
+            }else{
             string name;
             int age, roll;
             float marks;
@@ -140,59 +194,54 @@ int main(){
             cout << "Enter Marks: ";
             cin >> marks;
 
-            Student s;
-            s.setDetails(name, age, roll, marks);
-            students.push_back(s);
+           students[studentCount].setDetails(name, age, roll, marks);
+            studentCount++;
 
             cout << "Student added successfully!\n";
         }
+        }
         else if (choice == 2) {
-            cout << "\n--- Student List ---\n";
-            for (auto &s : students) {
-                s.display();
-                cout << "-------------------\n";
+            cout << "\n Student List \n";
+            for (int i=0; i<studentCount;i++) {
+                students[i].display();
+                cout << "\n";
             }
         }
-        //can also use this for the choice 2
-        // for (int i = 0; i < students.size(); i++) {
-        // students[i].display();
-        // cout << "-------------------\n";
-        // }
        else if (choice == 3) {
-            int searchType;
+             int searchType;
             cout << "Search by 1. Roll No  2. Name: ";
             cin >> searchType;
+            bool found = false;
 
             if (searchType == 1) {
                 int roll;
                 cout << "Enter Roll No: ";
                 cin >> roll;
-                bool found = false;
 
-                for (auto &s : students) {
-                    if (s.searchByRoll(roll)) {
-                        s.display();
+                for (int i = 0; i < studentCount; i++) {
+                    if (students[i].searchByRoll(roll)) {
+                        students[i].display();
                         found = true;
                         break;
                     }
                 }
-                if (!found) cout << "Student not found.\n";
-            }
-             else {
+            } else {
                 string name;
                 cout << "Enter Name: ";
                 cin.ignore();
                 getline(cin, name);
-                bool found = false;
 
-                for (auto &s : students) {
-                    if (s.searchByName(name)) {
-                        s.display();
+                for (int i = 0; i < studentCount; i++) {
+                    if (students[i].searchByName(name)) {
+                        students[i].display();
                         found = true;
                         break;
                     }
                 }
-                if (!found) cout << "Student not found.\n";
+            }
+
+            if (!found) {
+                cout << "Student not found.\n";
             }
         }
         else if (choice == 4) {
@@ -204,9 +253,9 @@ int main(){
             cin >> newMarks;
 
             bool updated = false;
-            for (auto &s : students) {
-                if (s.searchByRoll(roll)) {
-                    updateMarks(s, newMarks);
+            for (int i = 0; i < studentCount; i++) {
+                if (students[i].searchByRoll(roll)) {
+                    updateMarks(students[i], newMarks);
                     cout << "Marks updated successfully!\n";
                     updated = true;
                     break;
@@ -214,21 +263,37 @@ int main(){
             }
             if (!updated) cout << "Roll No not found.\n";
         }
-         else if (choice == 5) {
-            try {
-                ofstream fout("students.txt");
-                if (!fout) throw runtime_error("File could not be opened!");
+            else if (choice == 5) {
+    try {
+        ofstream fout("students.txt");
+        ofstream weakOut("weak_students.txt");
+        if (!fout || !weakOut) throw runtime_error("File could not be opened!");
 
-                for (auto &s : students) {
-                    s.saveToFile(fout);
-                }
-                fout.close();
-                cout << "Data saved to file successfully!\n";
+        for (int i = 0; i < studentCount; i++) {
+            // Save all students
+            students[i].saveToFile(fout);
+
+            // Check if weak
+            WeakStudent w(
+                students[i].getName(),
+                students[i].getAge(),
+                students[i].getRollNo(),
+                students[i].getMarks()
+            );
+            if (w.isWeak()) {
+                w.saveToFile(weakOut);
             }
-            catch (exception &e) {
-                cout << "Error: " << e.what() << endl;
-                 }
         }
+
+        fout.close();
+        weakOut.close();
+        cout << "Data saved to files successfully!\n";
+        cout << "Weak students saved to weak_students.txt successfully!\n";
+    }
+    catch (exception &e) {
+        cout << "Error: " << e.what() << endl;
+    }
+}       
         else if (choice == 6) {
             cout << "Total students currently in memory: " << Student::getCount() << endl;
         }
@@ -237,4 +302,4 @@ int main(){
     cout << "Exiting program...\n";
     return 0;
 
-}
+} 
